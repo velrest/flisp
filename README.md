@@ -3,7 +3,7 @@ I swear im not mad.
 
 Last executed statement of execution block `run` or function is return value
 
-This is as of now only a spec and no compiler is implemented.
+This is as of now only a spec and no interpreter is implemented.
 
 Builtins:
 - `match any [case]` define a case tree
