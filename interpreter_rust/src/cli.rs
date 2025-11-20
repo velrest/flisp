@@ -5,4 +5,6 @@ use clap::Parser;
 pub struct Arguments {
     #[arg(short, long)]
     pub start_path: std::path::PathBuf,
+    #[arg(short)]
+    pub use_processes: bool,
 }
