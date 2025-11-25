@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{Parser, builder::OsStr};
 use std::{fs, io, process, thread, time};
 
 mod cli;
@@ -30,12 +30,12 @@ fn spawn(
         .spawn()
         .expect("failed");
         println!("{output:?}");
-        thread::sleep(time::Duration::from_millis(10000));
+        thread::sleep(time::Duration::from_millis(1000));
     } else {
         // Thread variant
         let thread_config = thread::Builder::new().name(file_name);
         let handler = thread_config.spawn(move || {
-            thread::sleep(time::Duration::from_millis(10000));
+            thread::sleep(time::Duration::from_millis(1000));
             evaluate_expression(path, use_processes)
         });
         let a = handler?.join().unwrap();
@@ -44,9 +44,46 @@ fn spawn(
     Ok(())
 }
 
+#[derive(Debug, Clone)]
+struct ExpressionMismatch {
+    path: std::path::PathBuf,
+    file_name: OsStr,
+}
+
+type ExpressionResult<T> = std::result::Result<T, ExpressionMismatch>;
+
+#[derive(Debug, Clone)]
+enum Statement {
+    WriteIO,
+}
+
+fn match_built_in(name: &str) -> Statement {
+    if !name.contains(":") {
+        println!("{name:?} does not include : in name.");
+        panic!()
+    }
+
+    let collection = name.split(":").collect::<Vec<&str>>();
+    let expression = collection[1];
+
+    match expression {
+        "write_io" => Statement::WriteIO,
+        _ => panic!(),
+    }
+}
+
+fn read_sorted_dir(path: std::path::PathBuf) -> Vec<std::io::Result<fs::DirEntry>> {
+    let mut paths: Vec<_> = fs::read_dir(path).unwrap().collect();
+    paths.sort_by_key(|dir| match dir {
+        Ok(dir) => dir.file_name().into_string(),
+        _ => Ok("Z".to_owned()),
+    });
+    paths
+}
+
 fn evaluate_expression(path: std::path::PathBuf, use_processes: bool) -> io::Result<()> {
     println!("Item  = {path:?}");
-    let paths = fs::read_dir(&path)?;
+    let paths = read_sorted_dir(path);
     println!("{:?}", paths);
     for child in paths {
         match child {
@@ -54,6 +91,8 @@ fn evaluate_expression(path: std::path::PathBuf, use_processes: bool) -> io::Res
                 Ok(file_type) => {
                     if file_type.is_file() {
                         println!("is file");
+                        let built_in = match_built_in(&entry.file_name().into_string().unwrap());
+                        println!("{built_in:?}")
                     } else if file_type.is_dir() {
                         println!("is dir");
                         println!("is dir {:?}", entry);
