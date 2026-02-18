@@ -9,10 +9,7 @@ use expression_parser::evaluate_expression;
 use crate::expression_parser::RunContext;
 
 fn main() {
-    let cli::Arguments {
-        start_path,
-        use_processes,
-    } = cli::Arguments::parse();
+    let cli::Arguments { start_path } = cli::Arguments::parse();
 
     let file_name = match start_path.file_name() {
         Some(name) => match name.to_str() {
@@ -28,5 +25,5 @@ fn main() {
         parent_context: None,
     };
 
-    evaluate_expression(main_context, use_processes).unwrap();
+    evaluate_expression(main_context).unwrap();
 }
